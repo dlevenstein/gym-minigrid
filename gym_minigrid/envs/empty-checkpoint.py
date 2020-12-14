@@ -11,13 +11,14 @@ class EmptyEnv(MiniGridEnv):
         size=8,
         agent_start_pos=(1,1),
         agent_start_dir=0,
+        max_steps=float('inf'),
     ):
         self.agent_start_pos = agent_start_pos
         self.agent_start_dir = agent_start_dir
 
         super().__init__(
             grid_size=size,
-            max_steps=10*size*size,
+            max_steps=float('inf'),
             # Set this to True for maximum speed
             see_through_walls=True
         )
@@ -30,9 +31,17 @@ class EmptyEnv(MiniGridEnv):
         self.grid.wall_rect(0, 0, width, height)
 
         # Place a goal square in the bottom-right corner
-#         self.put_obj(Goal(), width - 2, height - 2) #orig
-        coordsW = np.random.randint(low=1, high=width-1, size=2)
-        self.put_obj(Goal(), coordsW[0], coordsW[1])
+#         self.put_obj(Goal(), width - 2, height - 2)
+        
+        # Place drive locations
+        coords = np.random.randint(low=1, high=width-1, size=2)
+        self.put_obj(Water(), coords[0], coords[1])
+        
+        coords = np.random.randint(low=1, high=width-1, size=2)
+        self.put_obj(Food(), coords[0], coords[1])
+        
+        coords = np.random.randint(low=1, high=width-1, size=2)
+        self.put_obj(Home(), coords[0], coords[1])
         
         # Place the agent
         if self.agent_start_pos is not None:
@@ -44,24 +53,24 @@ class EmptyEnv(MiniGridEnv):
         self.mission = "get to the green goal square"
 
 class EmptyEnv5x5(EmptyEnv):
-    def __init__(self, **kwargs):
-        super().__init__(size=5, **kwargs)
+    def __init__(self):
+        super().__init__(size=5)
 
 class EmptyRandomEnv5x5(EmptyEnv):
     def __init__(self):
         super().__init__(size=5, agent_start_pos=None)
 
 class EmptyEnv6x6(EmptyEnv):
-    def __init__(self, **kwargs):
-        super().__init__(size=6, **kwargs)
+    def __init__(self):
+        super().__init__(size=6)
 
 class EmptyRandomEnv6x6(EmptyEnv):
     def __init__(self):
         super().__init__(size=6, agent_start_pos=None)
 
 class EmptyEnv16x16(EmptyEnv):
-    def __init__(self, **kwargs):
-        super().__init__(size=16, **kwargs)
+    def __init__(self):
+        super().__init__(size=16)
 
 register(
     id='MiniGrid-Empty-5x5-v0',
