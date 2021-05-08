@@ -5,7 +5,6 @@ class hrrlEnv(MiniGridEnv):
     """
     hrrl grid environment, no obstacles, sparse reward
     """
-
     def __init__(
         self,
         size=8,
@@ -55,7 +54,9 @@ class hrrlEnv(MiniGridEnv):
             self.place_agent()
 
         self.mission = "get to the green goal square"
-
+        
+#     def sample():
+        
 class hrrlEnv5x5(hrrlEnv):
     def __init__(self):
         super().__init__(size=5)
