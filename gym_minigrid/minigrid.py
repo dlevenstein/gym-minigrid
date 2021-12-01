@@ -169,7 +169,7 @@ class Goal(WorldObj):
 
     def render(self, img):
         fill_coords(img, point_in_rect(0, 1, 0, 1), COLORS[self.color])
-        
+
 class Water(WorldObj):
     def __init__(self):
         super().__init__('water', 'blue')
@@ -179,7 +179,7 @@ class Water(WorldObj):
 
     def render(self, img):
         fill_coords(img, point_in_rect(0, 1, 0, 1), COLORS[self.color])
-        
+
 class Food(WorldObj):
     def __init__(self):
         super().__init__('food', 'green')
@@ -189,7 +189,7 @@ class Food(WorldObj):
 
     def render(self, img):
         fill_coords(img, point_in_rect(0, 1, 0, 1), COLORS[self.color])
-        
+
 class Home(WorldObj):
     def __init__(self):
         super().__init__('home', 'purple')
@@ -199,7 +199,7 @@ class Home(WorldObj):
 
     def render(self, img):
         fill_coords(img, point_in_rect(0, 1, 0, 1), COLORS[self.color])
-        
+
 class Floor(WorldObj):
     """
     Colored floor tile the agent can walk over
@@ -779,6 +779,18 @@ class MiniGridEnv(gym.Env):
         self.np_random, _ = seeding.np_random(seed)
         return [seed]
 
+    def hash(self, size=16):
+        """Compute a hash that uniquely identifies the current state of the environment.
+        :param size: Size of the hashing
+        """
+        sample_hash = hashlib.sha256()
+
+        to_encode = [self.grid.encode().tolist(), self.agent_pos, self.agent_dir]
+        for item in to_encode:
+            sample_hash.update(str(item).encode('utf8'))
+
+        return sample_hash.hexdigest()[:size]
+
     @property
     def steps_remaining(self):
         return self.max_steps - self.step_count
@@ -1133,7 +1145,7 @@ class MiniGridEnv(gym.Env):
     def step(self, action):
         self.step_count += 1
         reward = np.array([-.001,-.001,-.001, 0])
-        
+
         done = False
 
         # Get the position in front of the agent
@@ -1341,7 +1353,7 @@ class MiniGridEnv(gym.Env):
         )
 
         if mode == 'human':
-            self.window.show_img(img)
             self.window.set_caption(self.mission)
+            self.window.show_img(img)
 
         return img
