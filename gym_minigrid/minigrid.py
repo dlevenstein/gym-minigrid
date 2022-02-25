@@ -161,8 +161,8 @@ class WorldObj:
         raise NotImplementedError
 
 class Goal(WorldObj):
-    def __init__(self):
-        super().__init__('goal', 'green')
+    def __init__(self, color='green'):
+        super().__init__('goal', color)
 
     def can_overlap(self):
         return True
@@ -213,15 +213,16 @@ class Floor(WorldObj):
 
     def render(self, r):
         # Give the floor a pale color
-        c = COLORS[self.color]
-        r.setLineColor(100, 100, 100, 0)
-        r.setColor(*c/2)
-        r.drawPolygon([
-            (1          , TILE_PIXELS),
-            (TILE_PIXELS, TILE_PIXELS),
-            (TILE_PIXELS,           1),
-            (1          ,           1)
-        ])
+        c = COLORS[self.color]/5
+        # r.setLineColor(100, 100, 100, 0)
+        # r.setColor(*c/2)
+        # r.drawPolygon([
+        #     (1          , TILE_PIXELS),
+        #     (TILE_PIXELS, TILE_PIXELS),
+        #     (TILE_PIXELS,           1),
+        #     (1          ,           1)
+        # ])
+        fill_coords(r, point_in_rect(0, 1, 0, 1),c)
 
 class Lava(WorldObj):
     def __init__(self):
