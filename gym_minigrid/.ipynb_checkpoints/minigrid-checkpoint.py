@@ -161,15 +161,15 @@ class WorldObj:
         raise NotImplementedError
 
 class Goal(WorldObj):
-    def __init__(self):
-        super().__init__('goal', 'green')
+    def __init__(self, color='green'):
+        super().__init__('goal', color)
 
     def can_overlap(self):
         return True
 
     def render(self, img):
         fill_coords(img, point_in_rect(0, 1, 0, 1), COLORS[self.color])
-        
+
 class Water(WorldObj):
     def __init__(self):
         super().__init__('water', 'blue')
@@ -179,7 +179,7 @@ class Water(WorldObj):
 
     def render(self, img):
         fill_coords(img, point_in_rect(0, 1, 0, 1), COLORS[self.color])
-        
+
 class Food(WorldObj):
     def __init__(self):
         super().__init__('food', 'green')
@@ -189,7 +189,7 @@ class Food(WorldObj):
 
     def render(self, img):
         fill_coords(img, point_in_rect(0, 1, 0, 1), COLORS[self.color])
-        
+
 class Home(WorldObj):
     def __init__(self):
         super().__init__('home', 'purple')
@@ -199,7 +199,7 @@ class Home(WorldObj):
 
     def render(self, img):
         fill_coords(img, point_in_rect(0, 1, 0, 1), COLORS[self.color])
-        
+
 class Floor(WorldObj):
     """
     Colored floor tile the agent can walk over
@@ -213,15 +213,16 @@ class Floor(WorldObj):
 
     def render(self, r):
         # Give the floor a pale color
-        c = COLORS[self.color]
-        r.setLineColor(100, 100, 100, 0)
-        r.setColor(*c/2)
-        r.drawPolygon([
-            (1          , TILE_PIXELS),
-            (TILE_PIXELS, TILE_PIXELS),
-            (TILE_PIXELS,           1),
-            (1          ,           1)
-        ])
+        c = COLORS[self.color]/5
+        # r.setLineColor(100, 100, 100, 0)
+        # r.setColor(*c/2)
+        # r.drawPolygon([
+        #     (1          , TILE_PIXELS),
+        #     (TILE_PIXELS, TILE_PIXELS),
+        #     (TILE_PIXELS,           1),
+        #     (1          ,           1)
+        # ])
+        fill_coords(r, point_in_rect(0, 1, 0, 1),c)
 
 class Lava(WorldObj):
     def __init__(self):
@@ -546,7 +547,7 @@ class Grid:
         """
 
         if highlight_mask is None:
-            highlight_mask = np.zeros(shape=(self.width, self.height), dtype=np.bool)
+            highlight_mask = np.zeros(shape=(self.width, self.height), dtype=np.bool_)
 
         # Compute the total grid size
         width_px = self.width * tile_size
@@ -609,7 +610,7 @@ class Grid:
         width, height, channels = array.shape
         assert channels == 3
 
-        vis_mask = np.ones(shape=(width, height), dtype=np.bool)
+        vis_mask = np.ones(shape=(width, height), dtype=np.bool_)
 
         grid = Grid(width, height)
         for i in range(width):
@@ -622,7 +623,7 @@ class Grid:
         return grid, vis_mask
 
     def process_vis(grid, agent_pos):
-        mask = np.zeros(shape=(grid.width, grid.height), dtype=np.bool)
+        mask = np.zeros(shape=(grid.width, grid.height), dtype=np.bool_)
 
         mask[agent_pos[0], agent_pos[1]] = True
 
@@ -778,6 +779,18 @@ class MiniGridEnv(gym.Env):
         # Seed the random number generator
         self.np_random, _ = seeding.np_random(seed)
         return [seed]
+
+    def hash(self, size=16):
+        """Compute a hash that uniquely identifies the current state of the environment.
+        :param size: Size of the hashing
+        """
+        sample_hash = hashlib.sha256()
+
+        to_encode = [self.grid.encode().tolist(), self.agent_pos, self.agent_dir]
+        for item in to_encode:
+            sample_hash.update(str(item).encode('utf8'))
+
+        return sample_hash.hexdigest()[:size]
 
     @property
     def steps_remaining(self):
@@ -1133,7 +1146,7 @@ class MiniGridEnv(gym.Env):
     def step(self, action):
         self.step_count += 1
         reward = np.array([-.001,-.001,-.001, 0])
-        
+
         done = False
 
         # Get the position in front of the agent
@@ -1232,7 +1245,7 @@ class MiniGridEnv(gym.Env):
         if not self.see_through_walls:
             vis_mask = grid.process_vis(agent_pos=(self.agent_view_size // 2 , self.agent_view_size - 1))
         else:
-            vis_mask = np.ones(shape=(grid.width, grid.height), dtype=np.bool)
+            vis_mask = np.ones(shape=(grid.width, grid.height), dtype=np.bool_)
 
         # Make it so the agent sees what it's carrying
         # We do this by placing the carried object at the agent's position
@@ -1312,7 +1325,7 @@ class MiniGridEnv(gym.Env):
         top_left = self.agent_pos + f_vec * (self.agent_view_size-1) - r_vec * (self.agent_view_size // 2)
 
         # Mask of which cells to highlight
-        highlight_mask = np.zeros(shape=(self.width, self.height), dtype=np.bool)
+        highlight_mask = np.zeros(shape=(self.width, self.height), dtype=np.bool_)
 
         # For each cell in the visibility mask
         for vis_j in range(0, self.agent_view_size):
@@ -1341,7 +1354,7 @@ class MiniGridEnv(gym.Env):
         )
 
         if mode == 'human':
-            self.window.show_img(img)
             self.window.set_caption(self.mission)
+            self.window.show_img(img)
 
         return img
