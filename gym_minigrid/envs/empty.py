@@ -3,7 +3,7 @@ from gym_minigrid.register import register
 import random
 import numpy as np
 
-from utils.general import clumpyRandom
+#from utils.general import clumpyRandom
 
 class EmptyEnv(MiniGridEnv):
     """
@@ -133,3 +133,19 @@ register(
     id='MiniGrid-Empty-Rainbow-22x22-v0',
     entry_point='gym_minigrid.envs:EmptyEnv22x22_rainbow'
 )
+
+
+
+def clumpyRandom(size,choices,seedprobability,numiter=1):
+    pattern = np.random.choice(choices,(size,size),p=seedprobability)
+    
+    for ii in range(numiter):
+        for xx in range(size^2):
+            x = np.random.choice(range(size))
+            y = np.random.choice(range(size))
+            
+            adjacent = pattern[max(x-1,0):x+2,max(y-1,0):y+2]
+            
+            pattern[x,y] = np.random.choice(adjacent.flatten())
+            
+    return pattern

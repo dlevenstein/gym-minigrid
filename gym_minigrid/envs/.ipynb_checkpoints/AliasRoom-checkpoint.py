@@ -15,6 +15,7 @@ class Alias_Env(MiniGridEnv):
         Lwidth=10, Lheight=8,
         agent_start_pos=(5,5),
         agent_start_dir=0,
+        agent_view_size = 5,
         goal_pos = None,
     ):
         self.agent_start_pos = agent_start_pos
@@ -31,7 +32,7 @@ class Alias_Env(MiniGridEnv):
             max_steps=10*size*size,
             # Set this to True for maximum speed
             see_through_walls=True,
-            agent_view_size=5
+            agent_view_size=agent_view_size
         )
 
     def _gen_grid(self, width, height):

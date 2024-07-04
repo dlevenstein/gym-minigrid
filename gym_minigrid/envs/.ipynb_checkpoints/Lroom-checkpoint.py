@@ -15,6 +15,7 @@ class L_Env(MiniGridEnv):
         Lwidth=10, Lheight=8,
         agent_start_pos=(1,1),
         agent_start_dir=0,
+        agent_view_size = 7,
         goal_pos = None,
     ):
         self.agent_start_pos = agent_start_pos
@@ -30,7 +31,8 @@ class L_Env(MiniGridEnv):
             grid_size=size,
             max_steps=10*size*size,
             # Set this to True for maximum speed
-            see_through_walls=True
+            see_through_walls=True,
+            agent_view_size=agent_view_size
         )
 
     def _gen_grid(self, width, height):
@@ -124,6 +126,11 @@ class LEnv_18(L_Env):
         super().__init__(size=18,Lwidth=10,Lheight=8,
                          agent_start_pos=None,**kwargs)
         
+class LEnv_18_v5(L_Env):
+    def __init__(self, **kwargs):
+        super().__init__(size=18,Lwidth=10,Lheight=8, agent_view_size = 5,
+                         agent_start_pos=None,**kwargs)
+        
 class LEnv_18_goal(L_Env):
     def __init__(self, **kwargs):
         super().__init__(size=18, Lwidth=10,Lheight=8,
@@ -146,6 +153,11 @@ register(
 register(
     id='MiniGrid-LRoom-18x18-v0',
     entry_point='gym_minigrid.envs:LEnv_18'
+)
+
+register(
+    id='MiniGrid-LRoom_v5-18x18-v0',
+    entry_point='gym_minigrid.envs:LEnv_18_v5'
 )
 
 register(
