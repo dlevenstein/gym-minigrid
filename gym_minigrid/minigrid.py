@@ -16,7 +16,8 @@ COLORS = {
     'blue'  : np.array([0, 0, 255]),
     'purple': np.array([112, 39, 195]),
     'yellow': np.array([255, 255, 0]),
-    'grey'  : np.array([100, 100, 100])
+    'grey'  : np.array([100, 100, 100]),
+    'brown' : np.array([100, 50, 25])
 }
 
 COLOR_NAMES = sorted(list(COLORS.keys()))
@@ -29,7 +30,8 @@ COLOR_TO_IDX = {
     'green' : 3,
     'blue'  : 4,
     'purple': 5,
-    'yellow': 6
+    'yellow': 6,
+    'brown' : 7
 }
 
 IDX_TO_COLOR = dict(zip(COLOR_TO_IDX.values(), COLOR_TO_IDX.keys()))
@@ -487,14 +489,15 @@ class Grid:
         agent_dir=None,
         highlight=False,
         tile_size=TILE_PIXELS,
-        subdivs=3
+        subdivs=3,
+        empty_color=(0,0,0) #np.array([0, 0, 0], dtype=np.uint8)
     ):
         """
         Render a tile and cache the result
         """
 
         # Hash map lookup key for the cache
-        key = (agent_dir, highlight, tile_size)
+        key = (agent_dir, highlight, tile_size, empty_color)
         key = obj.encode() + key if obj else key
 
         if key in cls.tile_cache:
@@ -506,11 +509,17 @@ class Grid:
         fill_coords(img, point_in_rect(0, 0.031, 0, 1), (100, 100, 100))
         fill_coords(img, point_in_rect(0, 1, 0, 0.031), (100, 100, 100))
 
+        
         if obj != None:
             obj.render(img)
+        else:
+            fill_coords(img, point_in_rect(0, 1, 0, 1), empty_color)
 
         # Overlay the agent on top
         if agent_dir is not None:
+            #To maintain color of agent square across envs:
+            fill_coords(img, point_in_rect(0, 1, 0, 1), (0,0,0))
+
             tri_fn = point_in_triangle(
                 (0.12, 0.19),
                 (0.87, 0.50),
@@ -538,7 +547,8 @@ class Grid:
         tile_size,
         agent_pos=None,
         agent_dir=None,
-        highlight_mask=None
+        highlight_mask=None,
+        empty_color=(0,0,0) #np.array([0, 0, 0], dtype=np.uint8)
     ):
         """
         Render this grid at a given scale
@@ -565,7 +575,8 @@ class Grid:
                     cell,
                     agent_dir=agent_dir if agent_here else None,
                     highlight=highlight_mask[i, j],
-                    tile_size=tile_size
+                    tile_size=tile_size,
+                    empty_color=empty_color
                 )
 
                 ymin = j * tile_size
@@ -696,8 +707,12 @@ class MiniGridEnv(gym.Env):
         max_steps=1000,
         see_through_walls=False,
         seed=1337,
-        agent_view_size=7
+        agent_view_size=7,
+        empty_color=(0,0,0),
     ):
+        
+        self.empty_color = empty_color
+        
         # Can't set both grid_size and width/height
         if grid_size:
             assert width == None and height == None
@@ -1295,7 +1310,8 @@ class MiniGridEnv(gym.Env):
             tile_size,
             agent_pos=(self.agent_view_size // 2, self.agent_view_size - 1),
             agent_dir=3,
-            highlight_mask=vis_mask
+            highlight_mask=vis_mask,
+            empty_color = self.empty_color
         )
 
         return img
@@ -1350,7 +1366,8 @@ class MiniGridEnv(gym.Env):
             tile_size,
             self.agent_pos,
             self.agent_dir,
-            highlight_mask=highlight_mask if highlight else None
+            highlight_mask=highlight_mask if highlight else None,
+            empty_color = self.empty_color
         )
 
         if mode == 'human':

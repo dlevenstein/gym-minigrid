@@ -229,6 +229,7 @@ class RGBImgPartialObsWrapper_HD(gym.core.ObservationWrapper):
         super().__init__(env)
 
         self.tile_size = tile_size
+        #self.empty_color = env.empty_color
 
         obs_shape = env.observation_space['image'].shape
         self.observation_space.spaces['image'] = spaces.Box(
