@@ -2,6 +2,7 @@ from gym_minigrid.minigrid import *
 from gym_minigrid.register import register
 import random
 import numpy as np
+from numpy.random import RandomState
 
 COLORSHIFT = {
     'red'   : 'green',
@@ -27,7 +28,8 @@ class Alias_Env(MiniGridEnv):
         agent_view_size = 5,
         goal_pos = None,
         empty_color = (0,0,0),
-        color_shift = False
+        color_shift = False,
+        random_perturb=0
     ):
         self.agent_start_pos = agent_start_pos
         self.agent_start_dir = agent_start_dir
@@ -39,6 +41,12 @@ class Alias_Env(MiniGridEnv):
         
         self.Lwidth = Lwidth
         self.Lheight = Lheight
+
+        self.random_perturb = random_perturb
+        self.perturb_mat = None
+        if random_perturb>0:
+            prng = RandomState(1234567890) #Perturbation is the same for each instance of the env - for reproducibility/dataset generation
+            self.perturb_mat = prng.randint(-random_perturb,high=random_perturb,size=(size,size,3))
         
         super().__init__(
             grid_size=size,
@@ -97,6 +105,12 @@ class Alias_Env(MiniGridEnv):
             for gridobj in self.grid.grid:
                 if gridobj is not None:
                     gridobj.color = COLORSHIFT[gridobj.color]
+
+        #Add the random perturbation
+        if self.random_perturb > 0:
+            for i in range(width):
+                for j in range(height):
+                    self.grid.setP(i,j,tuple(self.perturb_mat[i,j,:]))
 
         self.mission = "get to the green goal square"
         
@@ -157,6 +171,14 @@ class AEnv_20_cshift(Alias_Env):
                          color_shift = True,
                          **kwargs)
         
+class AEnv_20_rperturbL(Alias_Env):
+    def __init__(self, **kwargs):
+        super().__init__(size=20,Lwidth=10,Lheight=14,random_perturb=7,**kwargs)
+
+class AEnv_20_rperturbH(Alias_Env):
+    def __init__(self, **kwargs):
+        super().__init__(size=20,Lwidth=10,Lheight=14,random_perturb=20,**kwargs)
+        
 class AEnv_18(Alias_Env):
     def __init__(self, **kwargs):
         super().__init__(size=18,Lwidth=10,Lheight=8,
@@ -179,6 +201,16 @@ register(
 register(
     id='MiniGrid-AliasRoom_cshift-20x20-v0',
     entry_point='gym_minigrid.envs:AEnv_20_cshift'
+)
+
+register(
+    id='MiniGrid-AliasRoom_rperturbH-20x20-v0',
+    entry_point='gym_minigrid.envs:AEnv_20_rperturbL'
+)
+
+register(
+    id='MiniGrid-AliasRoom_rperturbL-20x20-v0',
+    entry_point='gym_minigrid.envs:AEnv_20_rperturbH'
 )
 
 register(

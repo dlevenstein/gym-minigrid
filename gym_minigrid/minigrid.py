@@ -390,6 +390,7 @@ class Grid:
         self.height = height
 
         self.grid = [None] * width * height
+        self.perturbation = [(0)] * width * height
 
     def __contains__(self, key):
         if isinstance(key, WorldObj):
@@ -427,6 +428,16 @@ class Grid:
         assert i >= 0 and i < self.width
         assert j >= 0 and j < self.height
         return self.grid[j * self.width + i]
+    
+    def setP(self, i, j, p):
+        assert i >= 0 and i < self.width
+        assert j >= 0 and j < self.height
+        self.perturbation[j * self.width + i] = p
+
+    def getP(self, i, j):
+        assert i >= 0 and i < self.width
+        assert j >= 0 and j < self.height
+        return self.perturbation[j * self.width + i]
 
     def horz_wall(self, x, y, length=None, obj_type=Wall):
         if length is None:
@@ -456,7 +467,9 @@ class Grid:
         for i in range(self.width):
             for j in range(self.height):
                 v = self.get(i, j)
+                p = self.getP(i, j)
                 grid.set(j, grid.height - 1 - i, v)
+                grid.setP(j, grid.height - 1 - i, p)
 
         return grid
 
@@ -475,10 +488,13 @@ class Grid:
                 if x >= 0 and x < self.width and \
                    y >= 0 and y < self.height:
                     v = self.get(x, y)
+                    p = self.getP(x, y)
                 else:
                     v = Wall()
+                    p = (0)
 
                 grid.set(i, j, v)
+                grid.setP(i, j, p)
 
         return grid
 
@@ -490,14 +506,15 @@ class Grid:
         highlight=False,
         tile_size=TILE_PIXELS,
         subdivs=3,
-        empty_color=(0,0,0) #np.array([0, 0, 0], dtype=np.uint8)
+        empty_color=(0,0,0),
+        perturb=0 #np.array([0, 0, 0], dtype=np.uint8)
     ):
         """
         Render a tile and cache the result
         """
 
         # Hash map lookup key for the cache
-        key = (agent_dir, highlight, tile_size, empty_color)
+        key = (agent_dir, highlight, tile_size, empty_color, perturb)
         key = obj.encode() + key if obj else key
 
         if key in cls.tile_cache:
@@ -514,6 +531,7 @@ class Grid:
             obj.render(img)
         else:
             fill_coords(img, point_in_rect(0, 1, 0, 1), empty_color)
+        img = np.clip(img+perturb,0,255) #Note - this needs to be floor at 0, ceil at 255
 
         # Overlay the agent on top
         if agent_dir is not None:
@@ -569,6 +587,7 @@ class Grid:
         for j in range(0, self.height):
             for i in range(0, self.width):
                 cell = self.get(i, j)
+                perturb = self.getP(i,j)
 
                 agent_here = np.array_equal(agent_pos, (i, j))
                 tile_img = Grid.render_tile(
@@ -576,7 +595,8 @@ class Grid:
                     agent_dir=agent_dir if agent_here else None,
                     highlight=highlight_mask[i, j],
                     tile_size=tile_size,
-                    empty_color=empty_color
+                    empty_color=empty_color,
+                    perturb = perturb
                 )
 
                 ymin = j * tile_size
@@ -612,8 +632,33 @@ class Grid:
 
         return array
 
+    def encodeP(self, vis_mask=None):
+        """
+        Produce a compact numpy encoding of the grid
+        """
+
+        if vis_mask is None:
+            vis_mask = np.ones((self.width, self.height), dtype=bool)
+
+        array = np.zeros((self.width, self.height, 3), dtype='int8')
+
+        for i in range(self.width):
+            for j in range(self.height):
+                if vis_mask[i, j]:
+                    v = self.getP(i, j)
+
+                    if v is None:
+                        array[i, j, 0] = OBJECT_TO_IDX['empty']
+                        array[i, j, 1] = 0
+                        array[i, j, 2] = 0
+
+                    else:
+                        array[i, j, :] = v
+
+        return array
+
     @staticmethod
-    def decode(array):
+    def decode(array, perturb=None):
         """
         Decode an array grid encoding back into a grid
         """
@@ -629,6 +674,7 @@ class Grid:
                 type_idx, color_idx, state = array[i, j]
                 v = WorldObj.decode(type_idx, color_idx, state)
                 grid.set(i, j, v)
+                grid.setP(i, j, tuple(perturb[i,j]))
                 vis_mask[i, j] = (type_idx != OBJECT_TO_IDX['unseen'])
 
         return grid, vis_mask
@@ -708,7 +754,7 @@ class MiniGridEnv(gym.Env):
         see_through_walls=False,
         seed=1337,
         agent_view_size=7,
-        empty_color=(0,0,0),
+        empty_color=(0,0,0)
     ):
         
         self.empty_color = empty_color
@@ -1283,6 +1329,7 @@ class MiniGridEnv(gym.Env):
 
         # Encode the partially observable view into a numpy array
         image = grid.encode(vis_mask)
+        imageP = grid.encodeP(vis_mask)
 
         assert hasattr(self, 'mission'), "environments must define a textual mission string"
 
@@ -1293,17 +1340,19 @@ class MiniGridEnv(gym.Env):
         obs = {
             'image': image,
             'direction': self.agent_dir,
-            'mission': self.mission
+            'mission': self.mission,
+            'perturbation' : imageP
         }
 
         return obs
 
-    def get_obs_render(self, obs, tile_size=TILE_PIXELS//2):
+    def get_obs_render(self, obs, tile_size=TILE_PIXELS//2,
+                       perturbation=None):
         """
         Render an agent observation for visualization
         """
 
-        grid, vis_mask = Grid.decode(obs)
+        grid, vis_mask = Grid.decode(obs, perturb=perturbation)
 
         # Render the whole grid
         img = grid.render(

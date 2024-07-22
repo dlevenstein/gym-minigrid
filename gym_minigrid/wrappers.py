@@ -246,13 +246,15 @@ class RGBImgPartialObsWrapper_HD(gym.core.ObservationWrapper):
 
         rgb_img_partial = env.get_obs_render(
             obs['image'],
-            tile_size=self.tile_size
+            tile_size=self.tile_size,
+            perturbation=obs['perturbation']
         )
 
         return {
             'mission': obs['mission'],
             'image': rgb_img_partial,
-            'direction': obs['direction']
+            'direction': obs['direction'],
+            
         }
 
 
