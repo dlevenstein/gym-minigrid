@@ -167,17 +167,21 @@ class AEnv_20(Alias_Env):
 class AEnv_20_cshift(Alias_Env):
     def __init__(self, **kwargs):
         super().__init__(size=20,Lwidth=10,Lheight=14,
-                         empty_color = (150,150,150),
+                         empty_color = (75,125,125),
                          color_shift = True,
                          **kwargs)
         
 class AEnv_20_rperturbL(Alias_Env):
     def __init__(self, **kwargs):
-        super().__init__(size=20,Lwidth=10,Lheight=14,random_perturb=7,**kwargs)
+        super().__init__(size=20,Lwidth=10,Lheight=14,random_perturb=15,**kwargs)
 
 class AEnv_20_rperturbH(Alias_Env):
     def __init__(self, **kwargs):
-        super().__init__(size=20,Lwidth=10,Lheight=14,random_perturb=20,**kwargs)
+        super().__init__(size=20,Lwidth=10,Lheight=14,random_perturb=75,**kwargs)
+
+#class AEnv_20_rperturbVH(Alias_Env):
+#    def __init__(self, **kwargs):
+#        super().__init__(size=20,Lwidth=10,Lheight=14,random_perturb=80,**kwargs)
         
 class AEnv_18(Alias_Env):
     def __init__(self, **kwargs):
@@ -205,12 +209,17 @@ register(
 
 register(
     id='MiniGrid-AliasRoom_rperturbH-20x20-v0',
-    entry_point='gym_minigrid.envs:AEnv_20_rperturbL'
+    entry_point='gym_minigrid.envs:AEnv_20_rperturbH'
 )
 
 register(
     id='MiniGrid-AliasRoom_rperturbL-20x20-v0',
-    entry_point='gym_minigrid.envs:AEnv_20_rperturbH'
+    entry_point='gym_minigrid.envs:AEnv_20_rperturbL'
+)
+
+register(
+    id='MiniGrid-AliasRoom_rperturbVH-20x20-v0',
+    entry_point='gym_minigrid.envs:AEnv_20_rperturbVH'
 )
 
 register(

@@ -2,6 +2,7 @@ from gym_minigrid.minigrid import *
 from gym_minigrid.register import register
 import random
 import numpy as np
+from numpy.random import RandomState
 
 
 class L_Env(MiniGridEnv):
@@ -17,6 +18,7 @@ class L_Env(MiniGridEnv):
         agent_start_dir=0,
         agent_view_size = 7,
         goal_pos = None,
+        random_perturb=0
     ):
         self.agent_start_pos = agent_start_pos
         self.agent_start_dir = agent_start_dir
@@ -26,6 +28,12 @@ class L_Env(MiniGridEnv):
         
         self.Lwidth = Lwidth
         self.Lheight = Lheight
+
+        self.random_perturb = random_perturb
+        self.perturb_mat = None
+        if random_perturb>0:
+            prng = RandomState(1234567891) #Perturbation is the same for each instance of the env - for reproducibility/dataset generation
+            self.perturb_mat = prng.randint(-random_perturb,high=random_perturb,size=(size,size,3))
         
         super().__init__(
             grid_size=size,
@@ -63,6 +71,12 @@ class L_Env(MiniGridEnv):
         self.place_shape('triangle',triloc,'blue')
         self.place_shape('plus',plusloc,'red')
         self.place_shape('x',xloc,'yellow')
+
+        #Add the random perturbation
+        if self.random_perturb > 0:
+            for i in range(width):
+                for j in range(height):
+                    self.grid.setP(i,j,tuple(self.perturb_mat[i,j,:]))
 
         self.mission = "get to the green goal square"
         
@@ -130,6 +144,18 @@ class LEnv_18_v5(L_Env):
     def __init__(self, **kwargs):
         super().__init__(size=18,Lwidth=10,Lheight=8, agent_view_size = 5,
                          agent_start_pos=None,**kwargs)
+
+class LEnv_18_v5_rperturbL(L_Env):
+    def __init__(self, **kwargs):
+        super().__init__(size=18,Lwidth=10,Lheight=8, agent_view_size = 5,
+                         random_perturb=15,
+                         agent_start_pos=None,**kwargs)
+        
+class LEnv_18_v5_rperturbH(L_Env):
+    def __init__(self, **kwargs):
+        super().__init__(size=18,Lwidth=10,Lheight=8, agent_view_size = 5,
+                         random_perturb=75,
+                         agent_start_pos=None,**kwargs)
         
 class LEnv_18_goal(L_Env):
     def __init__(self, **kwargs):
@@ -158,6 +184,16 @@ register(
 register(
     id='MiniGrid-LRoom_v5-18x18-v0',
     entry_point='gym_minigrid.envs:LEnv_18_v5'
+)
+
+register(
+    id='MiniGrid-LRoom_v5_rperturbL-18x18-v0',
+    entry_point='gym_minigrid.envs:LEnv_18_v5_rperturbL'
+)
+
+register(
+    id='MiniGrid-LRoom_v5_rperturbH-18x18-v0',
+    entry_point='gym_minigrid.envs:LEnv_18_v5_rperturbH'
 )
 
 register(
