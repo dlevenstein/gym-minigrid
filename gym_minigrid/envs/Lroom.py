@@ -73,7 +73,7 @@ class L_Env(MiniGridEnv):
         self.place_shape('x',xloc,'yellow')
 
         #Add the random perturbation
-        if self.random_perturb > 0:
+        if hasattr(self, 'random_perturb') and self.random_perturb > 0:
             for i in range(width):
                 for j in range(height):
                     self.grid.setP(i,j,tuple(self.perturb_mat[i,j,:]))
