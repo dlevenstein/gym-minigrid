@@ -23,3 +23,4 @@ from gym_minigrid.envs.distshift import *
 
 from gym_minigrid.envs.Lroom import *
 from gym_minigrid.envs.AliasRoom import *
+from gym_minigrid.envs.AlternationRoom import *

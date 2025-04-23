@@ -3,6 +3,7 @@ from gym_minigrid.register import register
 import random
 import numpy as np
 from numpy.random import RandomState
+from operator import add
 
 
 class L_Env(MiniGridEnv):
@@ -18,7 +19,8 @@ class L_Env(MiniGridEnv):
         agent_start_dir=0,
         agent_view_size = 7,
         goal_pos = None,
-        random_perturb=0
+        random_perturb=0,
+        other_agent = False
     ):
         self.agent_start_pos = agent_start_pos
         self.agent_start_dir = agent_start_dir
@@ -35,6 +37,8 @@ class L_Env(MiniGridEnv):
             prng = RandomState(1234567891) #Perturbation is the same for each instance of the env - for reproducibility/dataset generation
             self.perturb_mat = prng.randint(-random_perturb,high=random_perturb,size=(size,size,3))
         
+        self.other_agent = other_agent
+
         super().__init__(
             grid_size=size,
             max_steps=10*size*size,
@@ -62,22 +66,28 @@ class L_Env(MiniGridEnv):
             self.agent_dir = self.agent_start_dir
         else:
             self.place_agent()
-        
-            
-        #Place the shapes
+
         triloc  =   (width/3-4,height/3-4)
         plusloc =   (2*width/3-2,height/3-4)
         xloc    =   (width/3-3,2*height/3-2)
-        self.place_shape('triangle',triloc,'blue')
-        self.place_shape('plus',plusloc,'red')
-        self.place_shape('x',xloc,'yellow')
+        #Add the other agent (as a ball...) or the shapes
+        if hasattr(self, 'other_agent') and self.other_agent:
+            #self.place_shape('plus',triloc,'blue')
+
+            self.conspecific = Ball(color='red')
+            self.place_obj(self.conspecific, max_tries=100) 
+        else:   
+            #Place the shapes
+            self.place_shape('triangle',triloc,'blue')
+            self.place_shape('plus',plusloc,'red')
+            self.place_shape('x',xloc,'yellow')
 
         #Add the random perturbation
         if hasattr(self, 'random_perturb') and self.random_perturb > 0:
             for i in range(width):
                 for j in range(height):
                     self.grid.setP(i,j,tuple(self.perturb_mat[i,j,:]))
-
+            
         self.mission = "get to the green goal square"
         
         
@@ -90,8 +100,31 @@ class L_Env(MiniGridEnv):
             #self.put_obj(Goal(), coordsW[0], coordsW[1]+1)
             #self.put_obj(Goal(), coordsW[0]+1, coordsW[1]+1)
             #Consider goal 2 x 2 squares
-            
-    
+
+
+    def step(self,action):
+
+        if hasattr(self, 'other_agent') and self.other_agent:
+            #Update conspecific agent position
+            old_pos = self.conspecific.cur_pos
+            top = tuple(map(add, old_pos, (-1, -1)))
+            try:
+                self.place_obj(self.conspecific, top=top, size=(3,3), reject_fn=reject_diagonal, max_tries=100)
+                self.grid.set(*old_pos, None)
+            except:
+                pass
+
+        #Step the agent
+        obs, reward, done, info = super().step(action)
+
+
+        if hasattr(self, 'other_agent') and self.other_agent:
+            if np.array_equal(self.conspecific.cur_pos, [-1,-1]):
+                self.conspecific.cur_pos = self.agent_pos
+        
+        return obs, reward, done, info
+
+
     def place_shape(self,shape,pos,color):
         """
         Place a 6x6 shape with lower left corner at (x,y)
@@ -124,7 +157,13 @@ class L_Env(MiniGridEnv):
 
         for coord in shapecoords:
             self.put_obj(Floor(color), coord[0], coord[1])
-        
+
+def reject_diagonal(self, pos):
+    current_pos = self.conspecific.cur_pos
+    diagonals = current_pos + np.array([[1, 1], [-1, -1], [1, -1], [-1, 1]])
+    if any((pos == diagonal).all() for diagonal in diagonals):
+        return True
+    return False
         
 
 class LEnv_16(L_Env):
@@ -139,7 +178,7 @@ class LEnv_18(L_Env):
     def __init__(self, **kwargs):
         super().__init__(size=18,Lwidth=10,Lheight=8,
                          agent_start_pos=None,**kwargs)
-        
+
 class LEnv_18_v5(L_Env):
     def __init__(self, **kwargs):
         super().__init__(size=18,Lwidth=10,Lheight=8, agent_view_size = 5,
@@ -163,6 +202,16 @@ class LEnv_18_goal(L_Env):
                          agent_start_pos=None, goal_pos = [9,2],
                          **kwargs)
 
+class LEnv_18_conspecific(L_Env):
+    def __init__(self, **kwargs):
+        super().__init__(size=18,Lwidth=10,Lheight=8,
+                         agent_start_pos=None, other_agent = True, **kwargs)
+
+class LEnv_10_conspecific(L_Env):
+    def __init__(self, **kwargs):
+        super().__init__(size=10,Lwidth=6,Lheight=4,
+                         agent_start_pos=None, other_agent = True, **kwargs)
+        
 
 register(
     id='MiniGrid-LRoom-16x16-v0',
@@ -199,5 +248,16 @@ register(
 register(
     id='MiniGrid-LRoom_Goal-18x18-v0',
     entry_point='gym_minigrid.envs:LEnv_18_goal'
+)
+
+
+register(
+    id='MiniGrid-LRoom_Conspecific-18x18-v0',
+    entry_point='gym_minigrid.envs:LEnv_18_conspecific'
+)
+
+register(
+    id='MiniGrid-LRoom_Conspecific-10x10-v0',
+    entry_point='gym_minigrid.envs:LEnv_10_conspecific'
 )
 

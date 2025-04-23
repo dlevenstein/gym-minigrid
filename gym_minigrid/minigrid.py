@@ -349,7 +349,10 @@ class Ball(WorldObj):
         return True
 
     def render(self, img):
-        fill_coords(img, point_in_circle(0.5, 0.5, 0.31), COLORS[self.color])
+            fill_coords(img, point_in_triangle((0.12, 0.19),(0.87, 0.50),(0.12, 0.81)),
+                        COLORS[self.color])
+    # def render(self, img):
+    #     fill_coords(img, point_in_circle(0.5, 0.5, 0.31), COLORS[self.color])
 
 class Box(WorldObj):
     def __init__(self, color, contains=None):
@@ -1353,6 +1356,9 @@ class MiniGridEnv(gym.Env):
         """
 
         grid, vis_mask = Grid.decode(obs, perturb=perturbation)
+
+        if not hasattr(self, 'empty_color'):
+            self.empty_color = (0,0,0)
 
         # Render the whole grid
         img = grid.render(
