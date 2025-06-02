@@ -73,9 +73,12 @@ class L_Env(MiniGridEnv):
         #Add the other agent (as a ball...) or the shapes
         if hasattr(self, 'other_agent') and self.other_agent:
             #self.place_shape('plus',triloc,'blue')
-
+            conspecific_start = [3,3]
             self.conspecific = Ball(color='red')
-            self.place_obj(self.conspecific, max_tries=100) 
+            #self.place_obj(self.conspecific, max_tries=100) 
+            self.place_obj(self.conspecific, top=conspecific_start, size=(width,1), max_tries=100)
+
+            self.conspecific.move_right = True
         else:   
             #Place the shapes
             self.place_shape('triangle',triloc,'blue')
@@ -105,14 +108,31 @@ class L_Env(MiniGridEnv):
     def step(self,action):
 
         if hasattr(self, 'other_agent') and self.other_agent:
-            #Update conspecific agent position
+            #Update conspecific agent position 
+            #If current direction is 'right', move right. If 'left', move left. Initialize direction when placing agent. (Toggle option)
             old_pos = self.conspecific.cur_pos
-            top = tuple(map(add, old_pos, (-1, -1)))
+            #BACK/FORTH MOTION
+            top = tuple(map(add, old_pos, (-1, 0)))
+            if self.conspecific.move_right:
+                top = tuple(map(add, old_pos, (1, 0)))
+
             try:
-                self.place_obj(self.conspecific, top=top, size=(3,3), reject_fn=reject_diagonal, max_tries=100)
+                self.place_obj(self.conspecific, top=top, size=(1,1), max_tries=10)
                 self.grid.set(*old_pos, None)
             except:
                 pass
+            #     self.conspecific.cur_pos = (old_pos[0]+1,old_pos[1])
+
+            if np.array_equal(self.conspecific.cur_pos, old_pos):
+                self.conspecific.move_right = not self.conspecific.move_right
+
+            #RANDOM MOTION
+            # top = tuple(map(add, old_pos, (-1, -1)))
+            # try:
+            #     self.place_obj(self.conspecific, top=top, size=(3,3), reject_fn=reject_diagonal, max_tries=100)
+            #     self.grid.set(*old_pos, None)
+            # except:
+            #     pass
 
         #Step the agent
         obs, reward, done, info = super().step(action)
