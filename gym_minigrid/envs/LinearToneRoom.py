@@ -11,8 +11,8 @@ class LinearTone_Env(MiniGridEnv):
     
     def __init__(
         self,
-        size=23,
-        agent_start_pos=(11,1), #Previously (11,20)
+        size=27,
+        agent_start_pos=(13,1), #Previously (11,20)
         agent_start_dir=1,
         agent_view_size = 7,
         goal_pos = None,
@@ -96,6 +96,6 @@ class LinearTone_Env(MiniGridEnv):
 
 
 register(
-    id='MiniGrid-LinearTone-24x24-v0',
+    id='MiniGrid-LinearTone-27x27-v0',
     entry_point='gym_minigrid.envs:LinearTone_Env'
 )
